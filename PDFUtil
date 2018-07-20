@@ -1,0 +1,150 @@
+package com.scb.channels.research.utils;
+
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSObject;
+import org.apache.pdfbox.cos.COSStream;
+import org.apache.pdfbox.multipdf.Overlay;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+public class PDFUtil {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PDFUtil.class);
+
+    public static ByteArrayOutputStream print(String textToWaterMark, byte[] bytes) {
+        try {
+            return printOverlay(textToWaterMark, bytes);
+        } catch (Exception e) {
+            LOG.warn("Exception while printing watermark using overlay ", e);
+            return printDirect(textToWaterMark, bytes);
+        }
+    }
+
+    public static ByteArrayOutputStream printOverlay(String textToWaterMark, byte[] bytes) {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PDDocument overlayDoc = new PDDocument();
+        PDDocument originalDoc = null;
+        try {
+            originalDoc = PDDocument.load(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed Loading Document", e);
+        }
+
+        PDPage originalPage = originalDoc.getPage(0);  // get first page to get the page size, we have to assume all the pages are of same size
+        PDRectangle originalPageSize = originalPage.getMediaBox();
+
+        PDPage page = new PDPage(originalPageSize);
+        overlayDoc.addPage(page);
+        Overlay overlayObj = new Overlay();
+        PDFont font = PDType1Font.HELVETICA;
+        float fontSize = 10.0f;
+
+        PDRectangle pageSize = page.getMediaBox();
+        float stringWidth = 0;
+        try {
+            stringWidth = font.getStringWidth(textToWaterMark) * fontSize / 1000f;
+            // calculate center of the page
+            int rotation = page.getRotation();
+            boolean rotate = rotation == 90 || rotation == 270;
+            float pageWidth = rotate ? pageSize.getHeight() : pageSize.getWidth();
+            float pageHeight = rotate ? pageSize.getWidth() : pageSize.getHeight();
+            float centerX = rotate ? pageHeight / 2f : (pageWidth - stringWidth) / 2f;
+
+            PDPageContentStream contentStream = new PDPageContentStream(overlayDoc, page);
+            contentStream.beginText();
+            contentStream.setFont(font, fontSize);
+            // set text color to grey
+            contentStream.setNonStrokingColor(128, 128, 128);
+
+            if (rotate) {
+                contentStream.newLineAtOffset(centerX, 10);
+            } else {
+                contentStream.newLineAtOffset(centerX, 10);
+            }
+            contentStream.showText(textToWaterMark);
+            contentStream.endText();
+            contentStream.close();
+
+
+            overlayObj.setOverlayPosition(Overlay.Position.FOREGROUND);
+            overlayObj.setInputPDF(originalDoc);
+            overlayObj.setAllPagesOverlayPDF(overlayDoc);
+
+
+            Map<Integer, String> ovmap = new HashMap<>();
+            PDDocument result = overlayObj.overlay(ovmap);
+
+            result.save(outputStream);
+            return outputStream;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed watermarking", e);
+        } finally {
+            try {
+                originalDoc.close();
+                overlayDoc.close();
+            } catch (IOException e) {
+                throw new RuntimeException("Error in closing PDFDocument ", e);
+            }
+        }
+    }
+
+    public static ByteArrayOutputStream printDirect(String textToWaterMark, byte[] bytes) {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (PDDocument originalDoc = PDDocument.load(bytes)) {
+            PDFont font = PDType1Font.HELVETICA;
+            float fontSize = 10.0f;
+            for (int i = 0; i < originalDoc.getPages().getCount(); i++) {
+                PDPage page = originalDoc.getPage(i);
+                PDRectangle pageSize = page.getMediaBox();
+                float stringWidth = font.getStringWidth(textToWaterMark) * fontSize / 1000f;
+                // calculate to center of the page
+                int rotation = page.getRotation();
+                boolean rotate = rotation == 90 || rotation == 270;
+                float pageWidth = rotate ? pageSize.getHeight() : pageSize.getWidth();
+                float pageHeight = rotate ? pageSize.getWidth() : pageSize.getHeight();
+                float centerX = rotate ? pageHeight / 2f : (pageWidth - stringWidth) / 2f;
+                float centerY = rotate ? (pageWidth - stringWidth) / 2f : pageHeight / 2f;
+
+                try (PDPageContentStream contentStream = new PDPageContentStream(originalDoc, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                    contentStream.beginText();
+                    // set font and font size
+                    contentStream.setFont(font, fontSize);
+                    // set text color to grey
+                    contentStream.setNonStrokingColor(128, 128, 128);
+                    contentStream.newLineAtOffset(centerX, 10);
+                    contentStream.showText(textToWaterMark);
+                    contentStream.endText();
+                }
+
+                for (COSObject cosObject : originalDoc.getDocument().getObjects()) {
+                    COSBase base = cosObject.getObject();
+                    if (base instanceof COSStream) {
+                        COSStream stream = (COSStream) base;
+                        byte[] byteArray = new PDStream(stream).toByteArray();
+                        try (OutputStream streamOut = stream.createOutputStream(COSName.FLATE_DECODE)) {
+                            streamOut.write(byteArray);
+                        }
+                    }
+                }
+            }
+            originalDoc.save(outputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed watermarking ", e);
+        }
+        return outputStream;
+    }
+}
