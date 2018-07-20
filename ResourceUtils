@@ -1,0 +1,73 @@
+package com.scb.channels.research.utils;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.NotFoundException;
+
+public class ResourceUtils {
+    public static final String RESOURCE_ROOT_PATH = "/api";
+    public static final String HEALTH_CHECK_ROOT_PATH = "/monitor";
+
+    private static final String TIME24HOURS_PATTERN = "([01]?[0-9]|2[0-3])([0-5][0-9])";
+    private static final String STRING_PATTERN = "^[a-zA-Z0-9 _-]+$";
+
+    private ResourceUtils() {
+    }
+
+    public static void badRequestIfTrue(boolean result, String message) {
+        if (result) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    public static <T> T badRequestIfNull(T actual, String message) {
+        badRequestIfTrue(actual == null, message);
+        return actual;
+    }
+
+    public static <T> T notFoundIfNull(T actual, String message) {
+        if (actual == null) {
+            throw new NotFoundException(message);
+        }
+        return actual;
+    }
+
+    public static void forbiddenIfFalse(boolean result, String userId) {
+        if (!result) throw forbidden(userId);
+    }
+
+    public static <T extends RuntimeException> T forbidden(String userId) {
+        return forbidden(userId, null);
+    }
+
+    public static <T extends RuntimeException> T forbidden(String userId, Exception cause) {
+        throw new ForbiddenException(String.format("%s unauthorized", userId), cause != null && cause.getCause() != null ? cause.getCause() : cause);
+    }
+
+    public static boolean isValidString(final String s){
+        return s.matches(STRING_PATTERN);
+    }
+
+    public static boolean isNull(Object obj) {
+        return obj == null;
+    }
+
+    public static boolean valid24HoursTime(final String time) {
+        return time.matches(TIME24HOURS_PATTERN);
+    }
+
+    public static String toBrowserHandledContentDispositionOrNull(String fileName) {
+        return StringUtils.isBlank(fileName) ? null : "filename=" + ensureQuoted(fileName);
+    }
+
+    public static String getFileName(String path) {
+        return FilenameUtils.getBaseName(path.replace("|", "/"));
+    }
+
+    private static String ensureQuoted(String fileName) {
+        return StringUtils.appendIfMissing(StringUtils.prependIfMissing(fileName, "\""), "\"");
+    }
+}
