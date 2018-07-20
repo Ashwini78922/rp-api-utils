@@ -1,0 +1,71 @@
+package com.scb.channels.research.utils;
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
+
+public class AESEncryptionUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(AESEncryptionUtils.class);
+
+    public static String encrypt(String strToEncrypt) {
+        return new EncryptionDecryptionConfig().encryptString(strToEncrypt);
+    }
+
+    public static String decrypt(String strToDecrypt) {
+        return new EncryptionDecryptionConfig().decryptString(strToDecrypt);
+    }
+
+    private static final class EncryptionDecryptionConfig {
+
+        private static final String ALGORITHM_MODE_PADDING = "AES/ECB/PKCS5Padding";
+        private static final String ALGORITHM = "AES";
+        private static final String HASH_ALGORITHM = "SHA-256";
+        private static final String key = "!@#$!@#$%^&**&^%";
+        private SecretKeySpec secretKey;
+
+        public void setKey(String myKey) {
+            MessageDigest sha = null;
+            try {
+                byte[] key = myKey.getBytes("UTF-8");
+                sha = MessageDigest.getInstance(HASH_ALGORITHM);
+                key = sha.digest(key);
+                key = Arrays.copyOf(key, 16);
+                secretKey = new SecretKeySpec(key, ALGORITHM);
+            } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+                LOG.error("Exception:", e);
+            }
+        }
+
+        public String encryptString(String strToEncrypt) {
+            try {
+                setKey(key);
+                Cipher cipher = Cipher.getInstance(ALGORITHM_MODE_PADDING);
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+                return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+            } catch (Exception e) {
+                LOG.error("Error while encrypting:", e);
+            }
+            return null;
+        }
+
+        public String decryptString(String strToDecrypt) {
+            try {
+                setKey(key);
+                Cipher cipher = Cipher.getInstance(ALGORITHM_MODE_PADDING);
+                cipher.init(Cipher.DECRYPT_MODE, secretKey);
+                return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+            } catch (Exception e) {
+                LOG.error("Error while decrypting: ", e);
+            }
+            return null;
+        }
+    }
+}
