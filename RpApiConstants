@@ -1,0 +1,40 @@
+
+package com.scb.channels.research.utils;
+
+public class RpApiConstants {
+
+    public static final String RP_APPLICATION_ID = "rp";
+    public static final String PUBLICATION_TYPES = "PublicationTypes";
+    public static final String RESEARCH_REASONS = "ResearchReasons";
+    public static final String REGIONS_AND_COUNTRIES = "RegionsAndCountries";
+    public static final String REGION_COUNTRY_MAP = "RegionCountryMap";
+    public static final String COLUMN_USER_ID = "userId";
+    public static final String ANALYSTS = "Analysts";
+    public static final String FORECAST_CATEGORY = "Forecast";
+    public static final String TRADEIDEAS_CATEGORY = "TradeIdeas";
+    public static final String ANALYST_TEAMS = "Teams";
+    public static final String ANALYST_ASSET_CLASS_COVERAGE_MAP = "AnalystAssetClassCoverageMap";
+    public static final String ANALYST_COUNTRY_COVERAGE_MAP = "AnalystCountryCoverageMap";
+    public static final String PORTAL_MENU = "PortalMenu";
+    public static final String TEAMS = "Teams";
+    public static final String SUBSCRIPTION_MENU_CATEGORY = "SubscriptionMenu";
+    public static final String EMAIL = "email";
+    public static final String DEVICE_IDENTIFIER = "deviceIdentifier";
+    public static final String IS_REGISTERED_USER = "isRegisteredUser";
+    public static final String DEVICE_TOKEN = "deviceToken";
+    public static final String SUCCESS = "success";
+    public static final String ORIGINAL_URL = "originalUrl";
+    public static final String SECRET = "secret";
+    public static final String RESPONSE = "response";
+    public static final String EMPTY_RMNAME_RMMAIL = "EMPTY_RMNAME_RMMAIL";
+    public static final String CAPTCHA = "CAPTCHA";
+    public static final String LANGUAGE_CODE = "languageCode";
+    public static final int HOST_INDEX = 0;
+    public static final int PORT_INDEX = 1;
+    public static final String CATEGORY_CONF_SESSION = "ConfSessions";
+    public static final String CATEGORY_REPORT = "Report";
+    public static final String PATH_REPORT_ID = "$.payload[?(@.reportId)].reportId";
+    public static final String REPORT_ID = "reportId";
+    public static final String EMPTY_PAYLOAD = "{payload:[]}";
+}
+
