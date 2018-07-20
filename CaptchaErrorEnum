@@ -1,0 +1,35 @@
+package com.scb.channels.research.utils;
+
+
+import java.util.Arrays;
+
+public enum CaptchaErrorEnum {
+
+    MISSING_INPUT_SECRET("missing-input-secret", "The secret parameter is missing"),
+    INVALID_INPUT_SECRETE("invalid-input-secret", "The secret parameter is invalid or malformed"),
+    MISSING_INPUT_RESPONSE("missing-input-response", "The response parameter is missing"),
+    INVALID_INPUT_RESPONSE("invalid-input-response", "The response parameter is invalid or malformed"),
+    BAD_REQUEST("bad-request", "he request is invalid or malformed");
+
+    private String name;
+    private String value;
+
+    private CaptchaErrorEnum(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    public static CaptchaErrorEnum filter(String code) {
+        return (CaptchaErrorEnum) Arrays.stream(values()).filter((c) -> {
+            return c.name.equalsIgnoreCase(code);
+        }).findFirst().orElse(null);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
