@@ -1,0 +1,26 @@
+package com.scb.channels.research.utils;
+
+import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+public class Base64Utils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Base64Utils.class);
+
+    public static String encodeToString(BufferedImage image, String type) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            ImageIO.write(image, type, bos);
+            byte[] imageBytes = bos.toByteArray();
+            return Base64.encodeBase64String(imageBytes);
+        } catch (IOException e) {
+            LOG.error("Exception in encodeToString :", e);
+        }
+        return null;
+    }
+}
